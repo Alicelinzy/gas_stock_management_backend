@@ -1,0 +1,15 @@
+.env
+.git
+.gitignore
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.vscode/
+*.swp
+*.swo
+media/
+static/
