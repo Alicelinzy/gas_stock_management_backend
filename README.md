@@ -2,119 +2,270 @@
 
 ## Overview
 
-This backend powers the **Gas Stock Management System**, managing gas inventory, orders, invoices, payments, and user roles (Buyer, Seller, Admin). It exposes a RESTful API for frontend and mobile applications to interact with.
+A Django REST API for managing gas stock, orders, invoices, payments, and user roles (Buyer, Seller, Admin). Built with PostgreSQL, JWT authentication, and Docker support. This backend serves both web and mobile clients.
 
 ---
 
-## Architecture
+## Features
 
-* **Framework:** Django REST Framework (DRF)
-* **Database:** PostgreSQL (recommended for relational data integrity)
-* **Authentication:** JWT Token-based
+* Role-based access: Buyer, Seller, Admin
+* Gas inventory management
+* Order processing and approval
+* Invoice and payment workflows
+* Ratings and feedback system
+* RESTful API with JWT authentication
+
+---
+
+## Tech Stack
+
+* **Framework:** Django REST Framework
+* **Database:** PostgreSQL
+* **Auth:** JWT-based
+* **Environment:** Dockerized
 * **API Format:** JSON over HTTP
-* **Environment:** Dockerized (optional but recommended for development)
 
 ---
 
-## User Roles & Capabilities
+## User Roles
 
-| Role   | Main Responsibilities                                            |
-| ------ | ---------------------------------------------------------------- |
-| Buyer  | Browse/filter gas stock, place orders, submit feedback           |
-| Seller | Manage inventory, receive orders, generate invoices              |
-| Admin  | Approve orders and invoices, manage payments, authorize delivery |
-
----
-
-## API Structure
-
-### Authentication
-
-* `POST /api/v1/register` — Register new user (Buyer or Seller)
-* `POST /api/v1/login` — Login and receive JWT token
-* `POST /api/v1/logout` — Logout and revoke token
-
-### Buyer Endpoints
-
-* `GET /api/v1/gas` — List available gas inventory
-
-  * Supports filters: `brand`, `weight`, `location`
-  * Example: `/api/v1/gas?brand=Jibu&weight=12kg&location=Kigali`
-
-* `POST /api/v1/orders` — Place a new order
-
-* `POST /api/v1/feedback` — Submit feedback and rating for a seller
-
-### Seller Endpoints
-
-* `GET /api/v1/seller/inventory` — View and manage current gas stock
-
-* `POST /api/v1/seller/inventory` — Add or update stock
-
-* `GET /api/v1/seller/orders` — View orders assigned to the seller
-
-* `POST /api/v1/seller/invoice` — Submit invoice for order delivery
-
-### Admin Endpoints
-
-* `GET /api/v1/admin/orders/pending` — View orders waiting for approval
-
-* `PATCH /api/v1/admin/orders/:id/approve` — Approve or reject orders
-
-* `GET /api/v1/admin/invoices/pending` — View invoices pending approval
-
-* `PATCH /api/v1/admin/invoices/:id/approve` — Approve invoices
-
-* `PATCH /api/v1/admin/delivery/:id/confirm` — Confirm delivery and release payment
+| Role   | Capabilities                                              |
+| ------ | --------------------------------------------------------- |
+| Buyer  | Browse gas stock, place orders, submit ratings & feedback |
+| Seller | Manage inventory, process orders, submit invoices         |
+| Admin  | Approve orders/invoices, manage payments & deliveries     |
 
 ---
 
-## Database Models (Simplified)
+## API Overview
 
-* **User:** Stores user info and role (buyer, seller, admin)
-* **GasInventory:** Tracks seller’s gas stock by brand, weight, quantity, and location
-* **Orders:** Records buyer orders linked to seller inventory
-* **Invoices:** Tracks invoice status for orders
-* **Feedback:** Buyers rate and comment on sellers
-* **Payments:** Manages payment records from admin to seller
+### Auth
 
----
+* `POST /api/v1/register/` — Register (Buyer/Seller/Admin)
+* `POST /api/v1/login/` — JWT token login
 
-## How to Use This Backend
+### Inventory
 
-1. **Frontend & Mobile developers:**
+* `GET /api/v1/gas/` — List inventory (filters: brand, weight, location)
+* `GET /api/v1/seller/inventory/` — View seller's inventory
+* `POST /api/inventory/` — Add new inventory
+* `PATCH /api/inventory/{id}/` — Update inventory
 
-   * Use the REST API endpoints to implement:
+### Orders
 
-     * Gas browsing & filtering UI
-     * Order placement flows
-     * Invoice viewing & confirmation (for sellers)
-     * Admin dashboards for order & invoice approvals
-     * Feedback and rating forms
+* `POST /api/v1/orders/` — Place an order (Buyer)
+* `GET /api/orders/my_orders/` — View buyer's orders
+* `GET /api/v1/seller/orders/` — View seller orders
+* `POST /api/orders/{id}/approve/` — Approve (Admin)
+* `POST /api/orders/{id}/reject/` — Reject (Admin)
+* `POST /api/orders/{id}/cancel/` — Cancel (Buyer)
+* `POST /api/orders/{id}/mark-delivered/` — Mark delivered (Seller)
 
-   * Use JWT authentication for secure API calls.
+### Invoices & Payments
 
-2. **Backend developers:**
+* `POST /api/v1/seller/invoice/` — Submit invoice (Seller)
+* `GET /api/v1/admin/invoices/pending/` — Pending invoices (Admin)
+* `POST /api/invoices/{id}/approve/` — Approve invoice (Admin)
+* `POST /api/invoices/{id}/mark-as-paid/` — Mark as paid (Admin)
 
-   * Follow the established models and serializers in `models.py` and `serializers.py`.
-   * Write views using Django REST Framework's class-based views or viewsets.
-   * Add permissions to ensure role-based access.
-   * Implement signals to automate notifications on order status changes.
-   * Write unit and integration tests to ensure API stability.
+### Feedback
 
-3. **General development tips:**
-
-   * Run migrations whenever models change: `python manage.py migrate`
-   * Use Django admin for quick data inspection during development.
-   * Document any API changes here and keep the OpenAPI/Swagger docs updated.
+* `POST /api/v1/feedback/` — Submit rating (Buyer)
+* `GET /api/ratings/` — View ratings
 
 ---
 
-## Development Environment Setup
+## Setup Guide
 
-1. Clone the repo
-2. Create a virtual environment
-3. Install dependencies
-4. Set up `.env` with database credentials and secret keys
-5. Run migrations and seed initial data
-6. Run the development server
+### Prerequisites
+
+* Docker & Docker Compose
+* Git
+
+### 1. Clone & Configure
+
+```bash
+git clone https://github.com/Alicelinzy/gas_stock_management_backend.git
+cd gas_stock_management_backend
+cp .env.example .env
+```
+
+> Edit `.env` with your DB credentials and JWT secret.
+
+### 2. Run the App
+
+```bash
+docker-compose up --build
+```
+
+### 3. Create Admin User
+
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+
+### 4. Access Services
+
+* API: `http://localhost:8000/api/`
+* Admin: `http://localhost:8000/admin/`
+* DB: PostgreSQL on `localhost:5432`
+
+---
+
+## Environment Variables
+
+`.env` example:
+
+```env
+SECRET_KEY=your-secret-key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+DB_NAME=gas_management_db
+DB_USER=postgres
+DB_PASSWORD=your-db-password
+DB_HOST=db
+DB_PORT=5432
+
+JWT_SECRET_KEY=your-jwt-secret
+```
+
+---
+
+## Developer Guide
+
+### Common Commands
+
+```bash
+# Run migrations
+docker-compose exec web python manage.py migrate
+
+# Create new migration
+docker-compose exec web python manage.py makemigrations
+
+# Access Django shell
+docker-compose exec web python manage.py shell
+
+# Run tests
+docker-compose exec web python manage.py test
+```
+
+### Rebuild Project
+
+```bash
+# Code changes
+docker-compose restart web
+
+# Dependency changes
+docker-compose up --build web
+
+# Docker config changes
+docker-compose down
+docker-compose up --build
+```
+
+---
+
+## Database Models
+
+### Core Models
+
+* `User` & `UserProfile` — with roles: Buyer, Seller, Admin
+* `GasInventory` — seller-managed stock
+* `Order` — buyer orders linked to inventory
+* `Invoice` & `Payment` — order billing and transactions
+* `Rating` — buyer feedback
+
+### Relations Overview
+
+```
+User ←→ UserProfile
+User ←→ GasInventory (as Seller)
+User ←→ Order (as Buyer)
+GasInventory ←→ Order
+Order ←→ Invoice ←→ Payment
+Order ←→ Rating
+```
+
+---
+
+## Testing Flow
+
+1. Register Buyer, Seller, and Admin
+2. Login and retrieve JWTs
+3. Seller adds inventory
+4. Buyer places order
+5. Admin approves order
+6. Seller marks as delivered
+7. Seller submits invoice
+8. Admin approves invoice and marks paid
+9. Buyer submits rating
+
+---
+
+## Troubleshooting
+
+### Common Fixes
+
+**Port Conflict**
+
+```bash
+# Change port in docker-compose.yml
+docker-compose down
+docker-compose up -d
+```
+
+**Permissions**
+
+```bash
+sudo chown -R $USER:$USER .
+```
+
+**Reset Database**
+
+```bash
+docker-compose down -v
+docker-compose up -d
+docker-compose exec web python manage.py migrate
+```
+
+---
+
+## Production Notes
+
+### Setup
+
+* Set `DEBUG=False`, strong `SECRET_KEY`, and proper `ALLOWED_HOSTS`
+* Use `docker-compose.prod.yml` for production builds
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
+```
+
+### Security
+
+* Configure HTTPS
+* Use environment variables for secrets
+* Setup firewalls and logging
+* Enable automatic backups
+
+---
+
+## Contributing
+
+### Code Style
+
+* Follow PEP 8
+* Write docstrings
+* Cover features with tests
+* Keep API docs updated
+
+### Git Workflow
+
+```bash
+git checkout -b feature/your-feature-name
+# Make changes and test
+git commit -m "Add your message"
+git push origin feature/your-feature-name
+```
